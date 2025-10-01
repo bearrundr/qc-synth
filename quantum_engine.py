@@ -4,12 +4,20 @@ Quantum Circuit Engine using IBM Qiskit
 """
 
 import numpy as np
-from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister
+from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister, transpile
 from qiskit.quantum_info import Statevector
-from qiskit_aer import AerSimulator
-from qiskit.compiler import transpile
 from typing import Dict, List, Tuple, Optional
 import logging
+
+# AerSimulator import with fallback
+try:
+    from qiskit_aer import AerSimulator
+except ImportError:
+    try:
+        from qiskit.providers.aer import AerSimulator
+    except ImportError:
+        from qiskit.providers.basic_provider import BasicProvider
+        AerSimulator = BasicProvider().get_backend('basic_simulator')
 
 # 로깅 설정
 logging.basicConfig(level=logging.INFO)
