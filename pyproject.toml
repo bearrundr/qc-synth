@@ -6,6 +6,7 @@ authors = [
     {name = "Quantum Synth Team", email = "team@quantumsynth.dev"}
 ]
 readme = "README.md"
+license = {text = "MIT"}
 requires-python = ">=3.9"
 dependencies = [
     "qiskit==0.44.0",
