@@ -1,3 +1,2 @@
-# System packages for Streamlit Cloud
 cmake
 build-essential
