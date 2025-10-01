@@ -406,6 +406,39 @@ def main():
         st.markdown('<h2 class="section-header">🎛️ 양자 게이트 제어</h2>', 
                    unsafe_allow_html=True)
         
+        # 초기 상태 표시 및 초기화
+        st.markdown("### 🔄 회로 상태")
+        
+        # 현재 상태 확인
+        viz_data = synth.get_circuit_visualization_data()
+        current_probs = viz_data['qubit_probabilities']
+        is_initial_state = all(prob == 0.0 for prob in current_probs.values())
+        
+        if is_initial_state:
+            st.success("✅ 초기 상태: 모든 큐빗이 |0⟩ 상태")
+            st.markdown("**현재 상태**: |000⟩ (무음)")
+        else:
+            st.info("🔄 게이트가 적용된 상태")
+            prob_text = " ".join([f"Q{i}:{prob:.1%}" for i, prob in current_probs.items()])
+            st.markdown(f"**확률**: {prob_text}")
+        
+        # 초기화 버튼 (더 눈에 띄게)
+        reset_col1, reset_col2 = st.columns(2)
+        with reset_col1:
+            if st.button("🔄 회로 초기화", key="main_reset", use_container_width=True, type="secondary"):
+                synth.reset_circuit()
+                st.session_state.last_audio = None
+                st.session_state.synthesis_count = 0
+                st.rerun()
+        
+        with reset_col2:
+            if st.button("🎵 초기 상태 재생", key="initial_play", use_container_width=True, disabled=not is_initial_state):
+                if is_initial_state:
+                    # 초기 상태는 무음이므로 짧은 무음 생성
+                    st.info("초기 상태는 모든 큐빗이 |0⟩이므로 무음입니다.")
+        
+        st.markdown("---")
+        
         # 큐빗 정보 표시
         st.markdown("### 큐빗 → 악기 매핑")
         qubit_info = [
@@ -508,11 +541,43 @@ def main():
         viz_data = synth.get_circuit_visualization_data()
         
         # 큐빗 확률 차트
-        if viz_data['qubit_probabilities']:
-            prob_chart = create_probability_chart(viz_data['qubit_probabilities'])
-            st.plotly_chart(prob_chart, use_container_width=True)
+        current_probs = viz_data['qubit_probabilities']
+        is_initial_state = all(prob == 0.0 for prob in current_probs.values())
+        
+        if is_initial_state:
+            # 초기 상태 전용 차트
+            st.markdown("### 📊 초기 상태 확률")
+            st.info("🔵 모든 큐빗이 |0⟩ 상태 (확률 100%)")
+            
+            # 초기 상태 시각화
+            initial_chart = create_probability_chart({0: 0.0, 1: 0.0, 2: 0.0})
+            st.plotly_chart(initial_chart, use_container_width=True)
+            
+            st.markdown("""
+            **초기 상태 설명:**
+            - 모든 큐빗이 |0⟩ 상태로 확정됨
+            - |1⟩ 상태 확률은 0%
+            - 측정하면 항상 '000' 결과
+            - 음악적으로는 무음 상태
+            """)
         else:
-            st.info("게이트를 적용하여 양자 상태를 생성하세요.")
+            st.markdown("### 📊 큐빗 |1⟩ 상태 확률")
+            prob_chart = create_probability_chart(current_probs)
+            st.plotly_chart(prob_chart, use_container_width=True)
+            
+            # 상태 해석
+            total_prob = sum(current_probs.values())
+            if total_prob > 0:
+                st.markdown("**상태 해석:**")
+                for qubit_id, prob in current_probs.items():
+                    if prob > 0.1:  # 10% 이상인 경우만 표시
+                        st.markdown(f"- Q{qubit_id}: {prob:.1%} 확률로 |1⟩ 상태")
+                    elif prob > 0:
+                        st.markdown(f"- Q{qubit_id}: {prob:.1%} 확률로 |1⟩ 상태 (약함)")
+                    else:
+                        st.markdown(f"- Q{qubit_id}: |0⟩ 상태 (확정)")
+            else:
+                st.warning("모든 큐빗이 |0⟩ 상태입니다.")
         
         # 회로 정보
         st.markdown("### 🔧 회로 정보")
@@ -528,9 +593,10 @@ def main():
             st.metric("합성 횟수", st.session_state.synthesis_count)
         
         # 회로 다이어그램
+        st.markdown("### 📋 회로 다이어그램")
+        
         if viz_data['gate_sequence']:
-            st.markdown("### 📋 회로 다이어그램")
-            
+            # 게이트가 적용된 회로
             # 시각적 다이어그램 시도
             img_base64, text_diagram = create_circuit_diagram_visual(
                 synth.quantum_engine.circuit, 
@@ -550,6 +616,31 @@ def main():
             else:
                 # 시각적 다이어그램 실패 시 텍스트만 표시
                 st.code(text_diagram, language=None)
+        else:
+            # 초기 상태 (게이트 없음)
+            st.info("🔵 초기 상태: 게이트가 적용되지 않은 빈 회로")
+            
+            initial_diagram = """
+🔬 초기 양자 회로 상태
+============================================================
+
+q_0: ─────
+          
+q_1: ─────
+          
+q_2: ─────
+          
+c: 3/═════
+
+📋 회로 정보:
+- 게이트 수: 0
+- 회로 깊이: 0
+- 상태: |000⟩ (모든 큐빗이 |0⟩)
+- 음향: 무음 (Silent)
+
+💡 게이트를 적용하여 양자 상태를 변경하고 음악을 생성해보세요!
+            """
+            st.code(initial_diagram, language=None)
     
     # 오른쪽 컬럼: 오디오 출력
     with col3:
