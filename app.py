@@ -155,25 +155,105 @@ def create_frequency_spectrum(track_info: List[Dict]) -> go.Figure:
     return fig
 
 
-def create_circuit_diagram(gate_sequence: List[Dict]) -> str:
-    """간단한 회로 다이어그램 텍스트 생성"""
+def create_circuit_diagram_visual(circuit, gate_sequence: List[Dict]):
+    """Qiskit 회로 다이어그램 시각화"""
+    import matplotlib
+    matplotlib.use('Agg')  # GUI 없는 백엔드 사용
+    import matplotlib.pyplot as plt
+    from io import BytesIO
+    import base64
+    
+    if not gate_sequence:
+        return None, "Empty circuit"
+    
+    try:
+        # matplotlib 설정
+        plt.style.use('default')
+        
+        # 회로 크기에 따라 figure 크기 조정
+        num_gates = len(gate_sequence)
+        fig_width = max(8, min(16, 2 + num_gates * 1.5))
+        fig_height = max(4, circuit.num_qubits * 1.5)
+        
+        fig, ax = plt.subplots(figsize=(fig_width, fig_height))
+        
+        # 회로 그리기 (다양한 스타일 시도)
+        try:
+            # IQP 스타일로 시도
+            circuit.draw(output='mpl', ax=ax, style='iqp')
+        except:
+            try:
+                # 기본 스타일로 시도
+                circuit.draw(output='mpl', ax=ax)
+            except:
+                # 텍스트 출력으로 대체
+                ax.text(0.5, 0.5, str(circuit), 
+                       horizontalalignment='center',
+                       verticalalignment='center',
+                       transform=ax.transAxes,
+                       fontfamily='monospace',
+                       fontsize=10)
+                ax.set_xlim(0, 1)
+                ax.set_ylim(0, 1)
+                ax.axis('off')
+        
+        # 제목 설정
+        ax.set_title('🔬 Quantum Circuit Diagram', fontsize=14, fontweight='bold', pad=20)
+        
+        # 레이아웃 조정
+        plt.tight_layout()
+        
+        # 이미지를 바이트로 변환
+        buffer = BytesIO()
+        plt.savefig(buffer, format='png', dpi=120, bbox_inches='tight', 
+                   facecolor='white', edgecolor='none')
+        buffer.seek(0)
+        
+        # Base64 인코딩
+        img_base64 = base64.b64encode(buffer.getvalue()).decode()
+        plt.close(fig)
+        
+        # 텍스트 다이어그램도 생성
+        text_diagram = create_circuit_diagram_text(gate_sequence)
+        
+        return img_base64, text_diagram
+        
+    except Exception as e:
+        # 오류 발생 시 텍스트 다이어그램만 반환
+        text_diagram = create_circuit_diagram_text(gate_sequence)
+        return None, text_diagram
+
+
+def create_circuit_diagram_text(gate_sequence: List[Dict]) -> str:
+    """텍스트 기반 회로 다이어그램 생성"""
     if not gate_sequence:
         return "Empty circuit"
     
-    diagram_lines = ["Circuit Diagram:", "=" * 50]
+    diagram_lines = [
+        "🔬 Quantum Circuit Diagram",
+        "=" * 60,
+        ""
+    ]
     
     for i, gate in enumerate(gate_sequence):
         gate_name = gate['name'].upper()
         qubits = gate['qubits']
         
         if gate_name == 'H':
-            diagram_lines.append(f"Step {i+1}: H gate on qubit {qubits[0]}")
+            diagram_lines.append(f"Step {i+1:2d}: 🌊 H gate on qubit {qubits[0]} (Hadamard - Superposition)")
         elif gate_name == 'X':
-            diagram_lines.append(f"Step {i+1}: X gate on qubit {qubits[0]}")
+            diagram_lines.append(f"Step {i+1:2d}: ⚡ X gate on qubit {qubits[0]} (Pauli-X - Bit Flip)")
         elif gate_name == 'CX':
-            diagram_lines.append(f"Step {i+1}: CNOT gate (control: {qubits[0]}, target: {qubits[1]})")
+            diagram_lines.append(f"Step {i+1:2d}: 🔗 CNOT gate (control: Q{qubits[0]} → target: Q{qubits[1]}) (Entanglement)")
         else:
-            diagram_lines.append(f"Step {i+1}: {gate_name} gate on qubits {qubits}")
+            diagram_lines.append(f"Step {i+1:2d}: 🎛️ {gate_name} gate on qubits {qubits}")
+    
+    diagram_lines.extend([
+        "",
+        "=" * 60,
+        f"Total gates: {len(gate_sequence)}",
+        f"Circuit depth: {max([len(gate_sequence), 1])}"
+    ])
     
     return "\n".join(diagram_lines)
 
@@ -407,8 +487,26 @@ def main():
         # 회로 다이어그램
         if viz_data['gate_sequence']:
             st.markdown("### 📋 회로 다이어그램")
-            circuit_diagram = create_circuit_diagram(viz_data['gate_sequence'])
-            st.code(circuit_diagram, language=None)
+            
+            # 시각적 다이어그램 시도
+            img_base64, text_diagram = create_circuit_diagram_visual(
+                synth.quantum_engine.circuit, 
+                viz_data['gate_sequence']
+            )
+            
+            if img_base64:
+                # 시각적 다이어그램 표시
+                st.markdown(
+                    f'<img src="data:image/png;base64,{img_base64}" style="width:100%; max-width:600px;">',
+                    unsafe_allow_html=True
+                )
+                
+                # 접을 수 있는 텍스트 다이어그램
+                with st.expander("📝 텍스트 다이어그램 보기"):
+                    st.code(text_diagram, language=None)
+            else:
+                # 시각적 다이어그램 실패 시 텍스트만 표시
+                st.code(text_diagram, language=None)
     
     # 오른쪽 컬럼: 오디오 출력
     with col3:
