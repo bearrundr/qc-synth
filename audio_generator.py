@@ -122,11 +122,34 @@ class AudioGenerator:
         if not is_on:
             return np.zeros(int(self.sample_rate * duration))
         
-        # 강한 기본파 + 약한 배음으로 "부스트" 효과
-        base_wave = self.generate_sine_wave(frequency, duration, amplitude)
-        boost_wave = self.generate_sine_wave(frequency * 2, duration, amplitude * 0.3)
+        # 더 강력하고 명확한 "부스트" 효과
+        # 1. 기본 사인파 (더 강하게)
+        base_wave = self.generate_sine_wave(frequency, duration, amplitude * 1.2)
         
-        return base_wave + boost_wave
+        # 2. 옥타브 배음 (더 강하게)
+        octave_wave = self.generate_sine_wave(frequency * 2, duration, amplitude * 0.6)
+        
+        # 3. 5도 배음 추가 (음악적 효과)
+        fifth_wave = self.generate_sine_wave(frequency * 1.5, duration, amplitude * 0.4)
+        
+        # 4. 펄스 효과 (토글 느낌)
+        samples = int(self.sample_rate * duration)
+        t = np.linspace(0, duration, samples, False)
+        
+        # 빠른 펄스 모듈레이션 (8Hz)
+        pulse_mod = 0.5 + 0.5 * np.sin(2 * np.pi * 8 * t)
+        
+        # 모든 파형 합성
+        combined_wave = base_wave + octave_wave + fifth_wave
+        
+        # 펄스 모듈레이션 적용
+        toggle_wave = combined_wave * pulse_mod
+        
+        # 정규화 및 강화
+        if np.max(np.abs(toggle_wave)) > 0:
+            toggle_wave = toggle_wave / np.max(np.abs(toggle_wave)) * amplitude * 1.5
+        
+        return toggle_wave
     
     def generate_synchronized_harmony(self, 
                                     frequencies: List[float], 
