@@ -167,9 +167,16 @@ class QuantumSynthEngine:
         qubit_probs = {i: 0.0 for i in range(self.num_qubits)}
         
         for state, count in counts.items():
+            # 공백으로 분리된 경우 첫 번째 부분만 사용 (클래식 비트 부분)
+            if ' ' in state:
+                state = state.split()[0]
+            
+            # 상태 문자열을 큐빗 수에 맞게 패딩
+            padded_state = state.zfill(self.num_qubits)
+            
             # 상태 문자열을 역순으로 읽어야 함 (Qiskit 규칙)
-            for i, bit in enumerate(reversed(state)):
-                if bit == '1':
+            for i, bit in enumerate(reversed(padded_state)):
+                if i < self.num_qubits and bit == '1':
                     qubit_probs[i] += count / total_shots
         
         return qubit_probs
@@ -200,7 +207,7 @@ class QuantumSynthEngine:
         for instruction in self.circuit.data:
             gate_info = {
                 'name': instruction.operation.name,
-                'qubits': [q.index for q in instruction.qubits],
+                'qubits': [self.circuit.find_bit(q).index for q in instruction.qubits],
                 'params': instruction.operation.params
             }
             gates.append(gate_info)
