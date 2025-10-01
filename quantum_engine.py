@@ -3,6 +3,10 @@ Quantum Circuit Engine using IBM Qiskit
 양자 회로 엔진 - H, X, CNOT 게이트 지원
 """
 
+import os
+# Qiskit 1.0 import 오류 억제
+os.environ['QISKIT_SUPPRESS_1_0_IMPORT_ERROR'] = '1'
+
 import numpy as np
 from qiskit import QuantumCircuit, QuantumRegister, ClassicalRegister, transpile
 from qiskit.quantum_info import Statevector
