@@ -34,8 +34,95 @@ st.markdown("""
         font-size: 2.5rem;
         font-weight: bold;
         text-align: center;
-        color: #1f77b4;
+        color: #ffffff;
         margin-bottom: 2rem;
+        padding: 2rem 1rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+        background-size: 400% 400%;
+        animation: gradientShift 8s ease infinite;
+        border-radius: 1rem;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .main-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-image: 
+            /* 양자 회로 노드들 */
+            radial-gradient(circle at 15% 25%, rgba(255,255,255,0.15) 3px, transparent 3px),
+            radial-gradient(circle at 85% 75%, rgba(255,255,255,0.15) 3px, transparent 3px),
+            radial-gradient(circle at 35% 85%, rgba(255,255,255,0.1) 2px, transparent 2px),
+            radial-gradient(circle at 65% 15%, rgba(255,255,255,0.1) 2px, transparent 2px),
+            radial-gradient(circle at 50% 50%, rgba(255,255,255,0.08) 1px, transparent 1px),
+            /* 회로 연결선들 */
+            linear-gradient(90deg, transparent 48%, rgba(255,255,255,0.12) 49%, rgba(255,255,255,0.12) 51%, transparent 52%),
+            linear-gradient(0deg, transparent 48%, rgba(255,255,255,0.08) 49%, rgba(255,255,255,0.08) 51%, transparent 52%),
+            linear-gradient(45deg, transparent 48%, rgba(255,255,255,0.06) 49%, rgba(255,255,255,0.06) 51%, transparent 52%),
+            /* 음파 패턴 */
+            repeating-linear-gradient(90deg, transparent, transparent 10px, rgba(255,255,255,0.04) 10px, rgba(255,255,255,0.04) 12px),
+            repeating-linear-gradient(0deg, transparent, transparent 15px, rgba(255,255,255,0.03) 15px, rgba(255,255,255,0.03) 17px);
+        background-size: 
+            80px 80px, 90px 90px, 60px 60px, 70px 70px, 40px 40px,
+            120px 120px, 150px 150px, 100px 100px,
+            25px 25px, 30px 30px;
+        background-position: 
+            0 0, 40px 40px, 20px 20px, 60px 60px, 10px 10px,
+            0 0, 0 0, 0 0,
+            0 0, 0 0;
+        animation: circuitFlow 20s linear infinite;
+        z-index: 1;
+    }
+    
+    .main-header h1 {
+        position: relative;
+        z-index: 2;
+        margin: 0;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+    
+    @keyframes gradientShift {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+    
+    @keyframes circuitFlow {
+        0% { 
+            transform: translateX(0) translateY(0) rotate(0deg);
+            opacity: 0.8;
+        }
+        25% { 
+            transform: translateX(-15px) translateY(-8px) rotate(1deg);
+            opacity: 0.9;
+        }
+        50% { 
+            transform: translateX(-30px) translateY(0) rotate(0deg);
+            opacity: 1;
+        }
+        75% { 
+            transform: translateX(-15px) translateY(8px) rotate(-1deg);
+            opacity: 0.9;
+        }
+        100% { 
+            transform: translateX(0) translateY(0) rotate(0deg);
+            opacity: 0.8;
+        }
+    }
+    
+    /* 호버 효과 추가 */
+    .main-header:hover {
+        transform: scale(1.02);
+        transition: transform 0.3s ease;
+    }
+    
+    .main-header:hover::before {
+        animation-duration: 10s;
     }
     .section-header {
         font-size: 1.5rem;
@@ -316,8 +403,11 @@ def main():
     """메인 애플리케이션"""
     
     # 헤더
-    st.markdown('<h1 class="main-header">🎵 Quantum Circuit Synthesizer</h1>', 
-                unsafe_allow_html=True)
+    st.markdown('''
+    <div class="main-header">
+        <h1>🎵 Quantum Circuit Synthesizer</h1>
+    </div>
+    ''', unsafe_allow_html=True)
     st.markdown("**IBM Qiskit을 활용한 교육용 양자 회로 음악 변환기**")
     st.markdown("---")
     
@@ -334,7 +424,7 @@ def main():
         st.markdown('<h2 class="section-header">⚙️ 제어판</h2>', unsafe_allow_html=True)
         
         # 회로 초기화
-        if st.button("🔄 회로 초기화", use_container_width=True):
+        if st.button("🔄 회로 초기화 → |000⟩", use_container_width=True):
             synth.reset_circuit()
             st.session_state.last_audio = None
             st.session_state.synthesis_count = 0
@@ -422,20 +512,11 @@ def main():
             prob_text = " ".join([f"Q{i}:{prob:.1%}" for i, prob in current_probs.items()])
             st.markdown(f"**확률**: {prob_text}")
         
-        # 초기화 버튼 (더 눈에 띄게)
-        reset_col1, reset_col2 = st.columns(2)
-        with reset_col1:
-            if st.button("🔄 회로 초기화", key="main_reset", use_container_width=True, type="secondary"):
-                synth.reset_circuit()
-                st.session_state.last_audio = None
-                st.session_state.synthesis_count = 0
-                st.rerun()
-        
-        with reset_col2:
-            if st.button("🎵 초기 상태 재생", key="initial_play", use_container_width=True, disabled=not is_initial_state):
-                if is_initial_state:
-                    # 초기 상태는 무음이므로 짧은 무음 생성
-                    st.info("초기 상태는 모든 큐빗이 |0⟩이므로 무음입니다.")
+        # 초기 상태 재생 버튼만 유지
+        if st.button("🎵 초기 상태 재생", key="initial_play", use_container_width=True, disabled=not is_initial_state):
+            if is_initial_state:
+                # 초기 상태는 무음이므로 짧은 무음 생성
+                st.info("초기 상태는 모든 큐빗이 |0⟩이므로 무음입니다.")
         
         st.markdown("---")
         
