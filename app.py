@@ -214,21 +214,64 @@ def create_circuit_diagram_visual(circuit, gate_sequence: List[Dict]):
         plt.close(fig)
         
         # 텍스트 다이어그램도 생성
-        text_diagram = create_circuit_diagram_text(gate_sequence)
+        text_diagram = create_circuit_diagram_text(gate_sequence, circuit)
         
         return img_base64, text_diagram
         
     except Exception as e:
         # 오류 발생 시 텍스트 다이어그램만 반환
-        text_diagram = create_circuit_diagram_text(gate_sequence)
+        text_diagram = create_circuit_diagram_text(gate_sequence, circuit)
         return None, text_diagram
 
 
-def create_circuit_diagram_text(gate_sequence: List[Dict]) -> str:
+def create_circuit_diagram_text(gate_sequence: List[Dict], circuit=None) -> str:
     """텍스트 기반 회로 다이어그램 생성"""
     if not gate_sequence:
         return "Empty circuit"
     
+    # Qiskit 네이티브 텍스트 다이어그램 시도
+    if circuit is not None:
+        try:
+            qiskit_text = circuit.draw('text')
+            
+            # 추가 정보와 함께 반환
+            info_lines = [
+                "🔬 Quantum Circuit Diagram",
+                "=" * 60,
+                "",
+                str(qiskit_text),
+                "",
+                "📋 Gate Sequence:",
+                "-" * 40
+            ]
+            
+            for i, gate in enumerate(gate_sequence):
+                gate_name = gate['name'].upper()
+                qubits = gate['qubits']
+                
+                if gate_name == 'H':
+                    info_lines.append(f"Step {i+1:2d}: 🌊 H gate on qubit {qubits[0]} (Hadamard - Superposition)")
+                elif gate_name == 'X':
+                    info_lines.append(f"Step {i+1:2d}: ⚡ X gate on qubit {qubits[0]} (Pauli-X - Bit Flip)")
+                elif gate_name == 'CX':
+                    info_lines.append(f"Step {i+1:2d}: 🔗 CNOT gate (control: Q{qubits[0]} → target: Q{qubits[1]}) (Entanglement)")
+                else:
+                    info_lines.append(f"Step {i+1:2d}: 🎛️ {gate_name} gate on qubits {qubits}")
+            
+            info_lines.extend([
+                "",
+                "=" * 60,
+                f"Total gates: {len(gate_sequence)}",
+                f"Circuit depth: {circuit.depth() if hasattr(circuit, 'depth') else len(gate_sequence)}"
+            ])
+            
+            return "\n".join(info_lines)
+            
+        except Exception as e:
+            # Qiskit 텍스트 다이어그램 실패 시 폴백
+            pass
+    
+    # 폴백: 기본 텍스트 다이어그램
     diagram_lines = [
         "🔬 Quantum Circuit Diagram",
         "=" * 60,

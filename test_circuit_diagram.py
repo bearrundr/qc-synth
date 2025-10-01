@@ -26,9 +26,44 @@ def test_circuit_visualization():
     print(f"- 게이트 수: {len(engine.circuit.data)}")
     print(f"- 회로 깊이: {engine.circuit.depth()}")
     
-    # 텍스트 다이어그램
-    print(f"\n텍스트 다이어그램:")
+    # 텍스트 다이어그램 (기본)
+    print(f"\n기본 텍스트 다이어그램:")
     print(engine.circuit)
+    
+    # 텍스트 다이어그램 (명시적)
+    print(f"\n명시적 텍스트 다이어그램 (draw('text')):")
+    try:
+        text_diagram = engine.circuit.draw('text')
+        print(text_diagram)
+    except Exception as e:
+        print(f"텍스트 다이어그램 오류: {e}")
+    
+    # 다른 텍스트 출력 형식들
+    print(f"\n다양한 텍스트 출력 형식:")
+    
+    # 1. 간단한 형식
+    try:
+        print("1. draw(output='text'):")
+        simple_text = engine.circuit.draw(output='text')
+        print(simple_text)
+    except Exception as e:
+        print(f"   오류: {e}")
+    
+    # 2. 접힌 형식
+    try:
+        print("\n2. draw(output='text', fold=-1):")
+        folded_text = engine.circuit.draw(output='text', fold=-1)
+        print(folded_text)
+    except Exception as e:
+        print(f"   오류: {e}")
+    
+    # 3. 세로 압축 형식
+    try:
+        print("\n3. draw(output='text', vertical_compression='high'):")
+        compressed_text = engine.circuit.draw(output='text', vertical_compression='high')
+        print(compressed_text)
+    except Exception as e:
+        print(f"   오류: {e}")
     
     # matplotlib 시각화 테스트
     try:
