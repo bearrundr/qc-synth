@@ -1,0 +1,37 @@
+[project]
+name = "quantum-circuit-synthesizer"
+version = "0.1.0"
+description = "Educational quantum circuit synthesizer using IBM Qiskit and Streamlit"
+authors = [
+    {name = "Quantum Synth Team", email = "team@quantumsynth.dev"}
+]
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "qiskit==0.44.0",
+    "streamlit>=1.28.0",
+    "numpy>=1.24.0",
+    "scipy>=1.11.0",
+    "plotly>=5.15.0",
+    "matplotlib>=3.7.0",
+    "pandas>=2.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "black>=23.7.0",
+    "flake8>=6.0.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.black]
+line-length = 88
+target-version = ['py39']
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
